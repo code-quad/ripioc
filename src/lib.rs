@@ -32,9 +32,12 @@ pub mod cve_ioc;
 pub mod file_ioc;
 pub mod hash_ioc;
 pub mod network_ioc;
+pub mod registries;
 
 mod regex_builder;
 
+use registries::parse_registry;
+use registries::RegistryIOC;
 #[cfg(feature = "serde_support")]
 use serde::Serialize;
 
@@ -60,6 +63,8 @@ pub struct IOCS<'a> {
     pub file_iocs: FileIOCS<'a>,
     /// The CVEIOCs found in the text.
     pub cve_iocs: Vec<CVEIOC<'a>>,
+    /// The registryIOCs found in the text/
+    pub registry_iocs: Vec<RegistryIOC<'a>>,
 }
 
 /// Matches all IOCs against the input and returns
@@ -84,5 +89,6 @@ pub fn parse_all_iocs(input: &str) -> IOCS {
         hash_iocs: parse_hash_iocs(input),
         file_iocs: parse_file_iocs(input),
         cve_iocs: parse_cve(input),
+        registry_iocs: parse_registry(input),
     }
 }
