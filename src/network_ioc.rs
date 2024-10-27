@@ -68,7 +68,8 @@ pub struct NetworkIOCS<'a> {
 }
 
 const URL_PATTERN: &str =
-    r#"(\b((http|https|hxxp|hxxps|nntp|ntp|rdp|sftp|smtp|ssh|tor|webdav|xmpp)://[\S]{1,})\b)"#;
+    r#"(?i)\b((http|https|ftp|sftp)://(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(/[^\s"<]*)?\b"#;
+
 const DOMAIN_PATTERN: &str = r#"(?i)  # Case-insensitive
     # Domain name pattern with subdomains
     (?:[a-z0-9-]+\.)*             # Optional subdomains
