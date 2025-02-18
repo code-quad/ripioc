@@ -71,10 +71,10 @@ const URL_PATTERN: &str =
     r#"(?i)\b((http|https|ftp|sftp)://(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(/[^\s"<]*)?\b"#;
 
 const DOMAIN_PATTERN: &str = r#"(?i)  # Case-insensitive
-    # Domain name pattern with subdomains
-    (?:[a-z0-9-]+\.)*             # Optional subdomains
-    [a-z0-9-]+                     # Second-level domain (e.g., example)
-    \.[a-z]{2,63}\b                # Generic TLD with 2-63 alphabetic characters
+    @?                                # Capture the preceding @ for further filtering
+    (?:[a-z0-9-]+\.)*                 # Optional subdomains (e.g., sub.example.com)
+    [a-z0-9-]+                        # Second-level domain (e.g., example)
+    \.[a-z0-9-]{2,63}\b               # TLD (supports alphabetic and numeric, e.g., .com, .xn--p1ai)
 "#;
 
 const EMAIL_PATTERN: &str = r#"[A-Za-z0-9_.]+@[0-9a-z.-]+"#;
@@ -231,6 +231,7 @@ pub fn parse_domains(input: &str) -> Vec<NetworkIOC> {
     }
     DOMAIN_RE
         .find_iter(input)
+        .filter(|x| !x.as_str().starts_with("@"))
         .map(|x| NetworkIOC::DOMAIN(x.as_str()))
         .collect()
 }
@@ -261,12 +262,23 @@ mod tests {
             vec![NetworkIOC::IPV6("2001:0db8:85a3:0000:0000:8a2e:0370:7334")]
         )
     }
+
     #[test]
-    fn test_parse_domains() {
+    fn test_parse_valid_domains() {
         assert_eq!(
             parse_domains("this has a www.test.com"),
             vec![NetworkIOC::DOMAIN("www.test.com")]
         );
+        assert_eq!(
+            parse_domains("visit example.co.uk now"),
+            vec![NetworkIOC::DOMAIN("example.co.uk")]
+        );
+    }
+
+    #[test]
+    fn test_parse_invalid_domains() {
+        assert_eq!(parse_domains("this is not a domain"), vec![]);
+        assert_eq!(parse_domains("email me at user@example.com"), vec![]);
     }
 
     #[test]
@@ -321,7 +333,6 @@ mod tests {
                 domains: vec![
                     NetworkIOC::DOMAIN("www.test.com"),
                     NetworkIOC::DOMAIN("www.ripioc.com"),
-                    NetworkIOC::DOMAIN("iocrip.com")
                 ],
                 emails: vec![NetworkIOC::EMAIL("some_ioc@iocrip.com")],
                 ipv4s: vec![NetworkIOC::IPV4("127.0.0.1")],
